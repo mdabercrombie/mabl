@@ -6,6 +6,11 @@ from datetime import date
 from shutil import move
 import MySQLdb
 
+
+STATS_DIR = join('/', 'home', 'centos', 'Documents', 'mabl_gamestats')
+STATS_DROPBOX = join(STATS_DIR, 'dropbox')
+STATS_ARCHIVE = join(STATS_DIR, 'archive')
+
 month_dict = {'Jan': '01',
               'Feb': '02',
               'Mar': '03',
@@ -127,7 +132,7 @@ def convert_to_mabldb_time(email_time):
             email_time.year, email_time.month, email_time.day)
 
     elif email_time.split()[0] in (
-            'Sun', 'Mon', 'Tue', 'Wed', 'Thur', 'Fri', 'Sat'):
+            'Sun,', 'Mon,', 'Tue,', 'Wed,', 'Thur,', 'Fri,', 'Sat,'):
         # This is a string from email
         time_parts = email_time.split()
         date_str = '{:04d}-{:02d}-{:02d}'.format(
