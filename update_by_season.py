@@ -65,7 +65,7 @@ def batting_by_season(season_id, games_played, game_type):
         LIMIT 1""", (season_id,))
     max_player_id, = curs.fetchone()
 
-    for player_id in range(max_player_id):
+    for player_id in range(max_player_id+1):
         if game_type == 'Regular':
             ngames = curs.execute("""SELECT pa, ab, r, h, 2b, 3b, hr, bb, 
                          rbi, k, sb, cs, sac, hbp, tb FROM batting
@@ -218,7 +218,7 @@ def pitching_by_season(season_id, games_played, game_type):
         LIMIT 1""", (season_id,))
     max_player_id, = curs.fetchone()
 
-    for player_id in range(max_player_id):
+    for player_id in range(max_player_id+1):
         if game_type == 'Regular':
             ngames = curs.execute("""SELECT inp, w, l, sv, h, r, er, k, 
                          bb, hbp, gs, cg, ab FROM pitching
@@ -448,7 +448,7 @@ def career_batting():
         LIMIT 1""")
     max_player_id, = curs.fetchone()
 
-    for player_id in range(max_player_id):
+    for player_id in range(max_player_id+1):
 
         # Is player active?
         nrows = curs.execute("""SELECT * FROM rosters
@@ -596,7 +596,7 @@ def career_pitching():
         ORDER BY pitching.player_id DESC LIMIT 1""")
     max_player_id, = curs.fetchone()
 
-    for player_id in range(max_player_id):
+    for player_id in range(max_player_id+1):
 
         # Is player active?
         nrows = curs.execute("""SELECT * FROM rosters

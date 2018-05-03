@@ -20,7 +20,7 @@ STATS_DROPBOX = join(STATS_DIR, 'dropbox')
 STATS_ARCHIVE = join(STATS_DIR, 'archive')
 
 
-def readmail(print_flag=True, only_consider_today=True):
+def readmail(print_flag=True, only_consider_today=True, game_date=None):
     """
     Opens and reads emails to get relevant iScore stats.
 
@@ -33,6 +33,7 @@ def readmail(print_flag=True, only_consider_today=True):
 
     :param bool print_flag: print basic email information
     :param bool only_consider_today: only read emails from current day
+    :param str game_date: look for games played on this date (yyyy-mm-dd)
     """
 
     # Login to gmail with provided credentials
@@ -50,6 +51,10 @@ def readmail(print_flag=True, only_consider_today=True):
     # Get first and last emails to consider
     first_email_id = int(id_list[-10])
     latest_email_id = int(id_list[-1])
+
+    # If only_consider_today is true, override game_date (set to None)
+    if only_consider_today:
+        game_date = None
 
     # Loop over each email
     for i in range(latest_email_id, first_email_id, -1):
@@ -74,6 +79,12 @@ def readmail(print_flag=True, only_consider_today=True):
                 # If this is an iScorecast email, skip it
                 if email_subject == 'Link to iScorecast':
                     continue
+
+                # If game_date was provided, check if this game is from the correct day
+                if game_date:
+                    email_game_date = email_subject.split()[5]
+                    if convert_to_mabldb_time(email_game_date) != game_date:
+                        continue
 
                 if print_flag:
                     print 'From :  ' + email_from
@@ -139,10 +150,11 @@ def main():
 
     parser.add_argument('-p', action='store_true', default=False, help='Print email information')
     parser.add_argument('-t', action='store_true', default=False, help='Only look at emails from today')
+    parser.add_argument('-d', default=None, help="Only look at games on given date, 'yyyy-mm-dd'", type=str)
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
 
     results = parser.parse_args()
-    readmail(print_flag=results.p, only_consider_today=results.t)
+    readmail(print_flag=results.p, only_consider_today=results.t, game_date=results.d)
 
 
 if __name__ == "__main__":

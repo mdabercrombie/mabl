@@ -128,11 +128,18 @@ def update_db_batting(game_id, team_ids, visitors_batting, home_batting, overwri
             if nrows > 0:
                 player_id = curs.fetchone()
             else:
-                # Need to add this player to the database
-                curs.execute("""INSERT INTO players (first_name, last_name)
-                    VALUES (%s, %s)""", (first_name, last_name))
-                curs.execute("""SELECT LAST_INSERT_ID()""")
-                player_id = curs.fetchone()
+                # Need to add this player to the database, check with user first
+                add_player = raw_input(
+                    "{0} {1} not found in database, add player? (y/n) ".format(first_name, last_name))
+                if add_player == y:
+                    curs.execute("""INSERT INTO players (first_name, last_name)
+                        VALUES (%s, %s)""", (first_name, last_name))
+                    curs.execute("""SELECT LAST_INSERT_ID()""")
+                    player_id = curs.fetchone()
+                else:
+                    # If user entered 'n', ask them for the correct player_id
+                    use_player_id = raw_input("Enter the desired player_id: ")
+                    player_id = int(use_player_id)
 
             # Use player_id to update batting
             pa = int(player[3]) + int(player[10]) + int(player[12]) + int(player[15]) + int(player[16])
@@ -200,11 +207,18 @@ def update_db_pitching(game_id, team_ids, visitors_pitching, home_pitching, over
             if nrows > 0:
                 player_id = curs.fetchone()
             else:
-                # Need to add this player to the database
-                curs.execute("""INSERT INTO players (first_name, last_name)
-                    VALUES (%s, %s)""", (first_name, last_name))
-                curs.execute("""SELECT LAST_INSERT_ID()""")
-                player_id = curs.fetchone()
+                # Need to add this player to the database, check with user first
+                add_player = raw_input(
+                    "{0} {1} not found in database, add player? (y/n) ".format(first_name, last_name))
+                if add_player == y:
+                    curs.execute("""INSERT INTO players (first_name, last_name)
+                        VALUES (%s, %s)""", (first_name, last_name))
+                    curs.execute("""SELECT LAST_INSERT_ID()""")
+                    player_id = curs.fetchone()
+                else:
+                    # If user entered 'n', ask them for the correct player_id
+                    use_player_id = raw_input("Enter the desired player_id: ")
+                    player_id = int(use_player_id)
 
             # inp = player[3], w = player[4], l = player[5], sv = player[6], h = player[7],
             # r = player[8], er = player[9], bb= player[10], k = player[11], hbp = player[12],
