@@ -16,8 +16,8 @@ month_dict = {'Jan': '01',
               'Mar': '03',
               'Apr': '04',
               'May': '05',
-              'June': '06',
-              'July': '07',
+              'Jun': '06',
+              'Jul': '07',
               'Aug': '08',
               'Sep': '09',
               'Oct': '10',
@@ -307,3 +307,18 @@ def get_indices(hdr_list):
     pitching_indx_list.append(hdr_list.index('WHIP'))
 
     return pitching_indx_list
+
+
+def get_player_name(player_id):
+
+    # Open database connection
+    db = MySQLdb.connect(host="localhost", user="stats",
+                         passwd="stats", db="baseball_stats")
+    curs = db.cursor()
+
+    curs.execute("""SELECT first_name, last_name FROM players WHERE player_id = %s""", (player_id,))
+    name = curs.fetchone()
+
+    player_name = "{0} {1}".format(name[0], name[1])
+
+    return player_name
