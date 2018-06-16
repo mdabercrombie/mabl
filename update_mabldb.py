@@ -6,7 +6,7 @@ import xlrd
 import MySQLdb
 from collections import namedtuple
 from mabl_utilities import convert_team_name_id, misspelled_names, \
-    convert_inp, get_indices, has_number, move_file, del_file
+    convert_inp, get_indices, has_number, move_file, del_file, get_player_name
 
 STATS_DIR = join('/', 'home', 'centos', 'Documents', 'mabl_gamestats')
 STATS_DROPBOX = join(STATS_DIR, 'dropbox')
@@ -28,6 +28,135 @@ def set_stats_flag(game_id):
 
     curs.execute("""UPDATE games SET stats = 'y' WHERE id = %s""",
                  (game_id,))
+
+
+def check_w_l(game_id):
+    """
+    Check that a win and loss have been assigned for this game. Ask user for input
+    and update the database accordingly if decisions have not been entered.
+
+    :param int game_id: id of game entry
+    :return:
+    """
+
+    # Open database connection
+    db = MySQLdb.connect(host="localhost", user="stats",
+                         passwd="stats", db="baseball_stats")
+    curs = db.cursor()
+
+    # Getting winning_team_id and losing_team_id
+    curs.execute("""SELECT home_team_id, visiting_team_id, winning_team_id
+        FROM games WHERE game_id = %s""", format(game_id,))
+    home_team_id, visiting_team_id, winning_team_id = curs.fetchall()
+
+    if winning_team_id == home_team_id:
+        losing_team_id = visiting_team_id
+    elif winning_team_id == visiting_team_id:
+        losing_team_id = home_team_id
+    else:
+        # winning_team_id doesn't match either of the expected teams
+        print "No match found for winning_team_id!"
+        return
+
+    # Check if a win and loss has been assigned to pitchers
+    w = curs.execute("""SELECT player_id FROM pitching 
+            WHERE w = 1 AND game_id = %s""", format(game_id,))
+
+    l = curs.execute("""SELECT player_id FROM pitching
+            WHERE l = 1 AND game_id = %s""", format(game_id,))
+
+    if w == 0:
+        # If no winner pitcher has been assigned, list players who pitched for the
+        # winning team and ask user to assign the win.
+        nrows = curs.execute("""SELECT p.pitching_order, plr.first_name, plr.last_name,
+                    p.player_id, t.team_name, p.inp, p.h, p.r, p.er, p.k, p.bb
+                    FROM pitching p 
+                    INNER JOIN players plr 
+                        ON p.player_id = plr.player_id
+                    INNER JOIN teams t
+                        ON p.team_id = t.id
+                    WHERE p.game_id = %s AND p.team_id = %s""",
+                             (game_id, winning_team_id))
+
+        if nrows > 0:
+            rows = curs.fetchall()
+
+            print "{0: <3} {1: <20} {2: <5} {3: <12} {4: <5} {5: <4}" \
+                      " {6: <4} {7: <4} {8: <4} {9: <4}".format(
+                '', 'Player Name', 'Player ID', 'Team', 'INP', 'H', 'R',
+                'ER', 'K', 'BB')
+            for row in rows:
+                pitching_order = row[0]
+                player_name = "{0} {1}".format(row[1], row[2])
+                player_id = row[3]
+                team_name = row[4]
+                inp = row[5]
+                h = row[6]
+                r = row[7]
+                er = row[8]
+                k = row[9]
+                bb = row[10]
+                print "{0: <3} {1: <20} {2: <5} {3: <12} {4: <5} {5: <4}" \
+                      " {6: <4} {7: <4} {8: <4} {9: <4}".format(
+                    pitching_order, player_name, player_id, team_name,
+                    inp, h, r, er, k, bb)
+
+        # Ask user to input player_id of pitcher who should get the win
+        win_pitch_id = raw_input("No win assigned, enter player_id of winning "
+                                 "pitcher [or just press Enter to skip]:")
+
+        # Update the database
+        curs.execute("""UPDATE pitching SET w = 1 WHERE game_id = %s
+            AND player_id = %s""", (game_id, win_pitch_id))
+
+        # Get the name of the pitcher who was assigned the win and print to screen
+        print "Win assigned to {0}.".format(get_player_name(win_pitch_id))
+
+    if l == 0:
+        # If no losing pitcher has been assigned, list players who pitched for the
+        # losing team and ask user to assign the loss.
+        nrows = curs.execute("""SELECT p.pitching_order, plr.first_name, plr.last_name,
+                    p.player_id, t.team_name, p.inp, p.h, p.r, p.er, p.k, p.bb
+                    FROM pitching p 
+                    INNER JOIN players plr 
+                        ON p.player_id = plr.player_id
+                    INNER JOIN teams t
+                        ON p.team_id = t.id
+                    WHERE p.game_id = %s AND p.team_id = %s""",
+                             (game_id, losing_team_id))
+
+        if nrows > 0:
+            rows = curs.fetchall()
+
+            print "{0: <3} {1: <20} {2: <5} {3: <12} {4: <5} {5: <4}" \
+                      " {6: <4} {7: <4} {8: <4} {9: <4}".format(
+                '', 'Player Name', 'Player ID', 'Team', 'INP', 'H', 'R',
+                'ER', 'K', 'BB')
+            for row in rows:
+                pitching_order = row[0]
+                player_name = "{0} {1}".format(row[1], row[2])
+                player_id = row[3]
+                team_name = row[4]
+                inp = row[5]
+                h = row[6]
+                r = row[7]
+                er = row[8]
+                k = row[9]
+                bb = row[10]
+                print "{0: <3} {1: <20} {2: <5} {3: <12} {4: <5} {5: <4}" \
+                      " {6: <4} {7: <4} {8: <4} {9: <4}".format(
+                    pitching_order, player_name, player_id, team_name,
+                    inp, h, r, er, k, bb)
+
+        loss_pitch_id = raw_input("No loss assigned, enter player_id of losing "
+                                 "pitcher [or just press Enter to skip]:")
+
+        # Update the database
+        curs.execute("""UPDATE pitching SET l = 1 WHERE game_id = %s
+            AND player_id = %s""", (game_id, loss_pitch_id))
+
+        # Get the name of the pitcher who was assigned the win and print to screen
+        print "Loss assigned to {0}.".format(get_player_name(loss_pitch_id))
 
 
 def update_db(game, overwrite_flag=True):
@@ -131,7 +260,7 @@ def update_db_batting(game_id, team_ids, visitors_batting, home_batting, overwri
                 # Need to add this player to the database, check with user first
                 add_player = raw_input(
                     "{0} {1} not found in database, add player? (y/n) ".format(first_name, last_name))
-                if add_player == y:
+                if add_player == 'y':
                     curs.execute("""INSERT INTO players (first_name, last_name)
                         VALUES (%s, %s)""", (first_name, last_name))
                     curs.execute("""SELECT LAST_INSERT_ID()""")
@@ -252,6 +381,9 @@ def update_db_pitching(game_id, team_ids, visitors_pitching, home_pitching, over
                                      int(player[9]), int(player[10]), int(player[12]),
                                      int(player[11]), gs, int(player[13]), int(player[14]), era,
                                      float(player[17]), float(player[18]), bb_inp, k_inp))
+
+    # Check that W-L was awarded for this game, if not provide user dialog
+
 
     db.close()
     return True
