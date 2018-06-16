@@ -383,7 +383,7 @@ def update_db_pitching(game_id, team_ids, visitors_pitching, home_pitching, over
                                      float(player[17]), float(player[18]), bb_inp, k_inp))
 
     # Check that W-L was awarded for this game, if not provide user dialog
-
+    check_w_l(game_id)
 
     db.close()
     return True
