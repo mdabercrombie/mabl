@@ -2,6 +2,7 @@
 
 import MySQLdb
 from argparse import ArgumentParser
+from mabl_utilities import get_player_name
 
 
 class Game:
@@ -36,19 +37,48 @@ class Game:
         self.home_visitors_known = home_visitors_known
 
 
-def get_player_name(player_id):
+def get_team_games(season_id, player_id, game_type):
+    """
+    Return the number of games this players team has played for the given season.
+
+    :param int season_id: current season id
+    :param int player_id: player id
+    :param str game_type: 'Regular', 'Playoffs', or 'Combined'
+    :return: games played
+    :rtype: int
+    """
 
     # Open database connection
     db = MySQLdb.connect(host="localhost", user="stats",
                          passwd="stats", db="baseball_stats")
     curs = db.cursor()
 
-    curs.execute("""SELECT first_name, last_name FROM players WHERE player_id = %s""", (player_id,))
-    name = curs.fetchone()
+    # Get team_id for this player
+    nrows = curs.execute("""SELECT team_id FROM rosters 
+                WHERE season_id = %s AND player_id = %s""", (season_id, player_id))
 
-    player_name = "{0} {1}".format(name[0], name[1])
+    if nrows > 0:
+        team_id, = curs.fetchone()
+    else:
+        # Return 0 if this player isn't on a team roster for this season
+        return 0
 
-    return player_name
+    # Create a list of valid game types based on provided 'game_type' argument
+    if game_type == 'Regular':
+        game_list = ('Regular')
+    elif game_type == 'Playoffs':
+        game_list = ('Playoffs Round 1', 'Playoffs Round 2', 'Championship Series')
+    else:
+        game_list = ('Regular', 'Playoffs Round 1', 'Playoffs Round 2', 'Championship Series')
+
+    curs.execute("""SELECT COUNT(*) FROM games WHERE season_id = %s
+        AND (home_team_id = %s OR visting_team_id = %s)
+        AND winning_team_id != NULL AND game_type IN %s""",
+                 (season_id, team_id, team_id, game_list))
+
+    team_games, = curs.fetchone()
+
+    return team_games
 
 
 def batting_by_season(season_id, games_played, game_type):
@@ -166,6 +196,11 @@ def batting_by_season(season_id, games_played, game_type):
                 WHERE id = %s""", (season_id,))
             season_length, = curs.fetchone()
 
+            # Update games_played based on games player's team has completed
+            team_games_played = get_team_games(season_id, player_id, game_type)
+            if team_games_played > 0:
+                games_played = team_games_played
+
             qualify = 'n'
             if pa_total >= season_length*2.5:
                 qualify = 'y'
@@ -201,7 +236,6 @@ def batting_by_season(season_id, games_played, game_type):
                                   double_total, triple_total, hr_total, bb_total, rbi_total, k_total, sb_total,
                                   cs_total, sac_total, hbp_total, tb_total, avg, obp, slg, ops, qualify, game_type))
                     print "INSERTED batting_by_season for player_id {0}".format(player_id)
-
 
 
 def pitching_by_season(season_id, games_played, game_type):
@@ -327,6 +361,11 @@ def pitching_by_season(season_id, games_played, game_type):
             curs.execute("""SELECT season_length FROM seasons
                 WHERE id = %s""", (season_id,))
             season_length, = curs.fetchone()
+
+            # Update games_played based on games player's team has completed
+            team_games_played = get_team_games(season_id, player_id, game_type)
+            if team_games_played > 0:
+                games_played = team_games_played
 
             qualify = 'n'
             if inp_total >= season_length*2:
@@ -748,7 +787,7 @@ def main():
     season_id = results.season_id
 
     # Valid types are: 'Regular', 'Playoffs', 'Combined'
-    for game_type in ('Regular', 'Combined'):
+    for game_type in ('Regular', 'Playoffs', 'Combined'):
         batting_by_season(season_id, games_played, game_type)
         pitching_by_season(season_id, games_played, game_type)
 
