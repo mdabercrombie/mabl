@@ -46,8 +46,10 @@ def check_w_l(game_id):
 
     # Getting winning_team_id and losing_team_id
     curs.execute("""SELECT home_team_id, visiting_team_id, winning_team_id
-        FROM games WHERE game_id = %s""", format(game_id,))
-    home_team_id, visiting_team_id, winning_team_id = curs.fetchall()
+        FROM games WHERE id = %s""", (game_id,))
+
+    game_results = curs.fetchall()
+    home_team_id, visiting_team_id, winning_team_id = game_results[0]
 
     if winning_team_id == home_team_id:
         losing_team_id = visiting_team_id
@@ -60,10 +62,7 @@ def check_w_l(game_id):
 
     # Check if a win and loss has been assigned to pitchers
     w = curs.execute("""SELECT player_id FROM pitching 
-            WHERE w = 1 AND game_id = %s""", format(game_id,))
-
-    l = curs.execute("""SELECT player_id FROM pitching
-            WHERE l = 1 AND game_id = %s""", format(game_id,))
+            WHERE w = 1 AND game_id = %s""", (game_id,))
 
     if w == 0:
         # If no winner pitcher has been assigned, list players who pitched for the
@@ -78,10 +77,17 @@ def check_w_l(game_id):
                     WHERE p.game_id = %s AND p.team_id = %s""",
                              (game_id, winning_team_id))
 
-        if nrows > 0:
+        win_pitch_id = None
+        if nrows == 1:
+            # If only one pitcher for winning team, they get win
+            row = curs.fetchall()
+            win_pitch_id = row[0][3]
+
+        elif nrows > 1:
+            # If multiple pitchers for winning team, decide who gets win
             rows = curs.fetchall()
 
-            print "{0: <3} {1: <20} {2: <5} {3: <12} {4: <5} {5: <4}" \
+            print "{0: <3} {1: <20} {2: <10} {3: <12} {4: <5} {5: <4}" \
                       " {6: <4} {7: <4} {8: <4} {9: <4}".format(
                 '', 'Player Name', 'Player ID', 'Team', 'INP', 'H', 'R',
                 'ER', 'K', 'BB')
@@ -96,21 +102,27 @@ def check_w_l(game_id):
                 er = row[8]
                 k = row[9]
                 bb = row[10]
-                print "{0: <3} {1: <20} {2: <5} {3: <12} {4: <5} {5: <4}" \
+                print "{0: <3} {1: <20} {2: <10} {3: <12} {4: <5} {5: <4}" \
                       " {6: <4} {7: <4} {8: <4} {9: <4}".format(
                     pitching_order, player_name, player_id, team_name,
                     inp, h, r, er, k, bb)
 
-        # Ask user to input player_id of pitcher who should get the win
-        win_pitch_id = raw_input("No win assigned, enter player_id of winning "
-                                 "pitcher [or just press Enter to skip]:")
+        if not win_pitch_id:
+            # Ask user to input player_id of pitcher who should get the win
+            win_pitch_id = raw_input("No win assigned, enter player_id of winning "
+                                     "pitcher [or just press Enter to skip]: ")
 
         # Update the database
         curs.execute("""UPDATE pitching SET w = 1 WHERE game_id = %s
             AND player_id = %s""", (game_id, win_pitch_id))
 
         # Get the name of the pitcher who was assigned the win and print to screen
-        print "Win assigned to {0}.".format(get_player_name(win_pitch_id))
+        print "Win assigned to {0}.\n".format(get_player_name(win_pitch_id))
+    else:
+        print "Win assigned to {0}.\n".format(get_player_name(curs.fetchone()[0]))
+
+    l = curs.execute("""SELECT player_id FROM pitching
+            WHERE l = 1 AND game_id = %s""", (game_id,))
 
     if l == 0:
         # If no losing pitcher has been assigned, list players who pitched for the
@@ -125,10 +137,17 @@ def check_w_l(game_id):
                     WHERE p.game_id = %s AND p.team_id = %s""",
                              (game_id, losing_team_id))
 
-        if nrows > 0:
+        loss_pitch_id = None
+        if nrows == 1:
+            # If only one pitcher for losing team, they get win
+            row = curs.fetchall()
+            loss_pitch_id = row[0][3]
+
+        elif nrows > 1:
+            # If multiple pitchers for winning team, decide who gets win
             rows = curs.fetchall()
 
-            print "{0: <3} {1: <20} {2: <5} {3: <12} {4: <5} {5: <4}" \
+            print "{0: <3} {1: <20} {2: <10} {3: <12} {4: <5} {5: <4}" \
                       " {6: <4} {7: <4} {8: <4} {9: <4}".format(
                 '', 'Player Name', 'Player ID', 'Team', 'INP', 'H', 'R',
                 'ER', 'K', 'BB')
@@ -143,20 +162,23 @@ def check_w_l(game_id):
                 er = row[8]
                 k = row[9]
                 bb = row[10]
-                print "{0: <3} {1: <20} {2: <5} {3: <12} {4: <5} {5: <4}" \
+                print "{0: <3} {1: <20} {2: <10} {3: <12} {4: <5} {5: <4}" \
                       " {6: <4} {7: <4} {8: <4} {9: <4}".format(
                     pitching_order, player_name, player_id, team_name,
                     inp, h, r, er, k, bb)
 
-        loss_pitch_id = raw_input("No loss assigned, enter player_id of losing "
-                                 "pitcher [or just press Enter to skip]:")
+        if not loss_pitch_id:
+            loss_pitch_id = raw_input("No loss assigned, enter player_id of losing "
+                                      "pitcher [or just press Enter to skip]: ")
 
         # Update the database
         curs.execute("""UPDATE pitching SET l = 1 WHERE game_id = %s
             AND player_id = %s""", (game_id, loss_pitch_id))
 
         # Get the name of the pitcher who was assigned the win and print to screen
-        print "Loss assigned to {0}.".format(get_player_name(loss_pitch_id))
+        print "Loss assigned to {0}.\n".format(get_player_name(loss_pitch_id))
+    else:
+        print "Loss assigned to {0}.\n".format(get_player_name(curs.fetchone()[0]))
 
 
 def update_db(game, overwrite_flag=True):
@@ -355,9 +377,9 @@ def update_db_pitching(game_id, team_ids, visitors_pitching, home_pitching, over
 
             # Check that we're not dividing by 0.0 inp
             if player[3] > 0:
-                bb_inp = player[10] / player[3]
-                k_inp = player[11] / player[3]
-                era = (player[9] / player[3]) * 9.00
+                bb_inp = round(player[10] / player[3], 2)
+                k_inp = round(player[11] / player[3], 2)
+                era = round((player[9] / player[3]) * 9.00, 2)
             else:
                 bb_inp = -100
                 k_inp = -100
@@ -380,7 +402,7 @@ def update_db_pitching(game_id, team_ids, visitors_pitching, home_pitching, over
                                      int(player[6]), int(player[7]), int(player[8]),
                                      int(player[9]), int(player[10]), int(player[12]),
                                      int(player[11]), gs, int(player[13]), int(player[14]), era,
-                                     float(player[17]), float(player[18]), bb_inp, k_inp))
+                                     float(player[17]), round(float(player[18]), 2), bb_inp, k_inp))
 
     # Check that W-L was awarded for this game, if not provide user dialog
     check_w_l(game_id)
