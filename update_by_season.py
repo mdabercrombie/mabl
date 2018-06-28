@@ -63,20 +63,23 @@ def get_team_games(season_id, player_id, game_type):
         # Return 0 if this player isn't on a team roster for this season
         return 0
 
+    games_query = "SELECT COUNT(*) FROM games WHERE season_id = {0} " \
+                  "AND (home_team_id = {1} OR visiting_team_id = {1}) " \
+                  "AND winning_team_id IS NOT NULL".format(season_id, team_id, team_id)
+
     # Create a list of valid game types based on provided 'game_type' argument
     if game_type == 'Regular':
-        game_list = ('Regular')
+        games_query = games_query + " AND game_type IN ('Regular')"
     elif game_type == 'Playoffs':
-        game_list = ('Playoffs Round 1', 'Playoffs Round 2', 'Championship Series')
+        games_query = games_query + \
+            " AND game_type IN ('Playoffs Round 1', 'Playoffs Round 2', 'Championship Series')"
     else:
-        game_list = ('Regular', 'Playoffs Round 1', 'Playoffs Round 2', 'Championship Series')
+        games_query = games_query + \
+            " AND game_type IN ('Regular', 'Playoffs Round 1', 'Playoffs Round 2', 'Championship Series')"
 
-    curs.execute("""SELECT COUNT(*) FROM games WHERE season_id = %s
-        AND (home_team_id = %s OR visting_team_id = %s)
-        AND winning_team_id != NULL AND game_type IN %s""",
-                 (season_id, team_id, team_id, game_list))
+    curs.execute(games_query)
 
-    team_games, = curs.fetchone()
+    team_games = curs.fetchone()[0]
 
     return team_games
 
@@ -363,9 +366,9 @@ def pitching_by_season(season_id, games_played, game_type):
             season_length, = curs.fetchone()
 
             # Update games_played based on games player's team has completed
-            team_games_played = get_team_games(season_id, player_id, game_type)
-            if team_games_played > 0:
-                games_played = team_games_played
+            # team_games_played = get_team_games(season_id, player_id, game_type)
+            # if team_games_played > 0:
+            #     games_played = team_games_played
 
             qualify = 'n'
             if inp_total >= season_length*2:
@@ -584,7 +587,7 @@ def career_batting():
 
             # Determine if this player qualifies for average-based leaders, at least 250 career pa
             qualify = 'n'
-            if pa_total >= 250:
+            if pa_total >= 300:
                 qualify = 'y'
 
             write_to_db = 1
@@ -779,7 +782,7 @@ def career_pitching():
 def main():
 
     parser = ArgumentParser()
-    parser.add_argument("games", help="how many games have been played this season", type=int)
+    parser.add_argument("--games", default=0, help="how many games have been played this season", type=int)
     parser.add_argument("--season_id", default=19, help="season id of season to update", type=int)
 
     results = parser.parse_args()
