@@ -112,12 +112,13 @@ def check_w_l(game_id):
             win_pitch_id = raw_input("No win assigned, enter player_id of winning "
                                      "pitcher [or just press Enter to skip]: ")
 
-        # Update the database
-        curs.execute("""UPDATE pitching SET w = 1 WHERE game_id = %s
+        if win_pitch_id:
+            # Update the database
+            curs.execute("""UPDATE pitching SET w = 1 WHERE game_id = %s
             AND player_id = %s""", (game_id, win_pitch_id))
 
-        # Get the name of the pitcher who was assigned the win and print to screen
-        print "Win assigned to {0}.\n".format(get_player_name(win_pitch_id))
+            # Get the name of the pitcher who was assigned the win and print to screen
+            print "Win assigned to {0}.\n".format(get_player_name(win_pitch_id))
     else:
         print "Win assigned to {0}.\n".format(get_player_name(curs.fetchone()[0]))
 
@@ -171,12 +172,13 @@ def check_w_l(game_id):
             loss_pitch_id = raw_input("No loss assigned, enter player_id of losing "
                                       "pitcher [or just press Enter to skip]: ")
 
-        # Update the database
-        curs.execute("""UPDATE pitching SET l = 1 WHERE game_id = %s
+        if loss_pitch_id:
+            # Update the database
+            curs.execute("""UPDATE pitching SET l = 1 WHERE game_id = %s
             AND player_id = %s""", (game_id, loss_pitch_id))
 
-        # Get the name of the pitcher who was assigned the win and print to screen
-        print "Loss assigned to {0}.\n".format(get_player_name(loss_pitch_id))
+            # Get the name of the pitcher who was assigned the win and print to screen
+            print "Loss assigned to {0}.\n".format(get_player_name(loss_pitch_id))
     else:
         print "Loss assigned to {0}.\n".format(get_player_name(curs.fetchone()[0]))
 
@@ -361,7 +363,7 @@ def update_db_pitching(game_id, team_ids, visitors_pitching, home_pitching, over
                 # Need to add this player to the database, check with user first
                 add_player = raw_input(
                     "{0} {1} not found in database, add player? (y/n) ".format(first_name, last_name))
-                if add_player == y:
+                if add_player == 'y':
                     curs.execute("""INSERT INTO players (first_name, last_name)
                         VALUES (%s, %s)""", (first_name, last_name))
                     curs.execute("""SELECT LAST_INSERT_ID()""")

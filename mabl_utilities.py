@@ -196,12 +196,21 @@ def misspelled_names(first_name, last_name):
     elif last_name in 'Hansen' and first_name in 'Joshua':
         first = 'Josh'
         last = 'Hansen'
-    elif last_name in 'Hirouji':
-        first = 'Darren'
-        last = 'Hiroji'
+    elif last_name in 'Marcotte':
+        first = 'Mike'
+        last = 'Marcotte'
     elif last_name in 'Kaahanui':
         first = 'Peter'
         last = "Ka'ahanui"
+    elif last_name in 'Popor':
+        first = 'Nikita'
+        last = 'Popov'
+    elif last_name in 'Campos' and first_name in 'Richie':
+        first = 'Richie'
+        last = 'Campas'
+    elif last_name in 'Yajure-Pena':
+        first = 'Enmanuel'
+        last = 'Yajure Pena'
     else:
         first = str(first_name)
         last = str(last_name)

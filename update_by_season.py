@@ -207,7 +207,7 @@ def batting_by_season(season_id, games_played, game_type):
             qualify = 'n'
             if pa_total >= season_length*2.5:
                 qualify = 'y'
-            elif season_id == 19:
+            elif season_id == 20:
                 if pa_total >= 2.5*games_played:
                     qualify = 'y'
 
@@ -366,14 +366,14 @@ def pitching_by_season(season_id, games_played, game_type):
             season_length, = curs.fetchone()
 
             # Update games_played based on games player's team has completed
-            # team_games_played = get_team_games(season_id, player_id, game_type)
-            # if team_games_played > 0:
-            #     games_played = team_games_played
+            team_games_played = get_team_games(season_id, player_id, game_type)
+            if team_games_played > 0:
+                games_played = team_games_played
 
             qualify = 'n'
             if inp_total >= season_length*2:
                 qualify = 'y'
-            elif season_id == 19:
+            elif season_id == 20:
                 if inp_total >= 2*games_played:
                     qualify = 'y'
 
@@ -783,7 +783,7 @@ def main():
 
     parser = ArgumentParser()
     parser.add_argument("--games", default=0, help="how many games have been played this season", type=int)
-    parser.add_argument("--season_id", default=19, help="season id of season to update", type=int)
+    parser.add_argument("--season_id", default=20, help="season id of season to update", type=int)
 
     results = parser.parse_args()
     games_played = results.games
