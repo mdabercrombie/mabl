@@ -6,7 +6,8 @@ import xlrd
 import MySQLdb
 from collections import namedtuple
 from mabl_utilities import convert_team_name_id, misspelled_names, \
-    convert_inp, get_indices, has_number, move_file, del_file, get_player_name
+    convert_inp, get_indices, has_number, move_file, del_file, get_player_name, \
+    list_similar_players
 
 STATS_DIR = join('/', 'home', 'centos', 'Documents', 'mabl_gamestats')
 STATS_DROPBOX = join(STATS_DIR, 'dropbox')
@@ -291,6 +292,8 @@ def update_db_batting(game_id, team_ids, visitors_batting, home_batting, overwri
                     player_id = curs.fetchone()
                 else:
                     # If user entered 'n', ask them for the correct player_id
+                    # List close matches from mabldb
+                    list_similar_players(last_name)
                     use_player_id = raw_input("Enter the desired player_id: ")
                     player_id = int(use_player_id)
 
@@ -573,6 +576,7 @@ def get_stats():
     for stats_file in listdir(STATS_DROPBOX):
         game_id = None
         team_ids = None
+
         if stats_file.endswith(".html"):
 
             # Get teams and game date from file name
@@ -637,7 +641,7 @@ def get_stats():
                                 visitors_hits = int(visitors_line[indx])
                                 home_hits = int(home_line[indx])
 
-                            # Get errors
+                                # Get errors
                             elif inn == 'E':
                                 visitors_errors = int(visitors_line[indx])
                                 home_errors = int(home_line[indx])

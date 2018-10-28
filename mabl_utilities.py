@@ -5,6 +5,7 @@ from os.path import join, isfile, exists, basename
 from datetime import date
 from shutil import move
 import MySQLdb
+from difflib import SequenceMatcher
 
 
 STATS_DIR = join('/', 'home', 'centos', 'Documents', 'mabl_gamestats')
@@ -331,3 +332,45 @@ def get_player_name(player_id):
     player_name = "{0} {1}".format(name[0], name[1])
 
     return player_name
+
+
+def list_similar_players(last_name, match_cutoff=0.8):
+    """
+    Print the player_id and names of all entries in players table that are
+    similar to the provided last_name.
+
+    :param str last_name: last name to be compared to players.last_name
+    :param float match_cutoff: ratio required to signify close match
+    :return:
+    """
+
+    # Open database connection
+    db = MySQLdb.connect(host="localhost", user="stats",
+                         passwd="stats", db="baseball_stats")
+    curs = db.cursor()
+
+    # Get all possible existing player names from db
+    curs.execute("""SELECT first_name, last_name, player_id FROM players""")
+    rows = curs.fetchall()
+
+    # Initialize value
+    first_match = True
+
+    # Loop over each player, if name is a close match print database entry
+    for row in rows:
+        first, last, player_id = row
+        if SequenceMatcher(None, last_name, last).ratio() > match_cutoff:
+
+            # If this is the first match found add blank line and a header
+            if first_match:
+                print
+                print "Suggested matches:"
+                print "{0: <10} {1: <30}".format('Player ID', 'Player Name')
+                first_match = False
+
+            player_name = "{0} {1}".format(first, last)
+            print "{0: <10} {1: <30}".format(player_id, player_name)
+
+    if not first_match:
+        # Add a blank line if any player names were printed
+        print
