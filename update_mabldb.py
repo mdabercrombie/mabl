@@ -373,6 +373,7 @@ def update_db_pitching(game_id, team_ids, visitors_pitching, home_pitching, over
                     player_id = curs.fetchone()
                 else:
                     # If user entered 'n', ask them for the correct player_id
+                    list_similar_players(last_name)
                     use_player_id = raw_input("Enter the desired player_id: ")
                     player_id = int(use_player_id)
 
